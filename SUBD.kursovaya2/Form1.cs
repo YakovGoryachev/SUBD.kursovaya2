@@ -17,30 +17,37 @@ namespace SUBD.kursovaya2
         {
             InitializeComponent();
         }
-        NpgsqlConnection conn = new NpgsqlConnection(
-            "server=localhost; Port=1234; database=DataBaseGopar; userId=gopar; password=1234");
-        public Form2 fm;
-        public static int id;
-        private void PrintTable()
+        RegistrationForm RegForm;
+
+        private void Form1_Load(object sender, EventArgs e)
         {
-            dataGridView1.DataSource = null;
-            dataGridView1.DataMember = null;
-            DataSet ds = new DataSet();
-            conn.Open();
-            ds.Clear();
-            NpgsqlCommand cmd = new NpgsqlCommand("select * from costTable", conn);
-            NpgsqlDataAdapter da = new NpgsqlDataAdapter(cmd);
-            da.Fill(ds, "costTable");
-            dataGridView1.DataSource = ds;
-            dataGridView1.DataMember = "costTable";
-            conn.Close();
+            MaximizeBox = false;
+            FormBorderStyle = FormBorderStyle.FixedDialog;
         }
-        private void button1_Click(object sender, EventArgs e) //Вывести
+
+        private void EntryBut_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void RegistrationBut_Click(object sender, EventArgs e)
         {
             try
             {
-                PrintTable();
-                id = dataGridView1.RowCount;
+                if (RegForm == null)
+                {
+                    RegForm = new RegistrationForm();
+                    RegForm.AutForm = this;
+                    RegForm.Show();
+                    Hide();
+                }
+                else if (RegForm.IsDisposed)
+                {
+                    RegForm = new RegistrationForm();
+                    RegForm.AutForm = this;
+                    RegForm.Show();
+                }
+                RegForm.Activate();
             }
             catch (Exception ex)
             {
@@ -48,45 +55,9 @@ namespace SUBD.kursovaya2
             }
         }
 
-        private void button2_Click(object sender, EventArgs e) //добавить
+        private void ExitBut_Click(object sender, EventArgs e)
         {
-            try
-            {
-                if (fm == null)
-                {
-                    fm = new Form2();
-                    fm.Show();
-                }
-                else if (fm.IsDisposed)
-                {
-                    fm = new Form2();
-                    fm.Show();
-                }
-                fm.Activate();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
-        }
-
-        private void button3_Click(object sender, EventArgs e) //удалить
-        {
-            try
-            {
-                PrintTable();
-                conn.Open();
-                id = dataGridView1.RowCount - 1;
-                NpgsqlCommand cmd = new NpgsqlCommand($"delete from costTable where id = {id}", conn);
-                cmd.ExecuteNonQuery();
-                conn.Close();
-                PrintTable();
-                id = dataGridView1.RowCount;
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message);
-            }
+            Application.Exit();
         }
     }
 }
