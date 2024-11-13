@@ -27,19 +27,63 @@ namespace SUBD.kursovaya2
 
         private void RegistrationBut_Click(object sender, EventArgs e)
         {
-            NpgsqlConnection con = new NpgsqlConnection(
-                "server=localhost; Port=1234; database=DataBaseGopar; userId=postgres; password=admin");
-            RegistrationInDatabase(con);
+            try
+            {
+                NpgsqlConnection con = new NpgsqlConnection(
+                    "server=localhost; Port=1234; database=DataBaseGopar; userId=postgres; password=admin");
+                RegistrationInDatabase(con);
+            }
+            catch (Exception ex)
+            {
+
+            }
         }
         private void RegistrationInDatabase(NpgsqlConnection con)
         {
-            if (textBox1.Text == "" || textBox2.Text == "") { MessageBox.Show("Заполните все поля"); return; }
+            if (textBox1.Text == "" || textBox2.Text == "" || textBox3.Text == "") { MessageBox.Show("Заполните все поля"); return; }
             string login = textBox1.Text;
             string password = textBox2.Text;
+            string email = textBox3.Text;
             if (SearchUser(con, login, password)) { MessageBox.Show("Такой пользователь уже существует"); return; }
             if (GuardSqlInjection(login, "where") || GuardSqlInjection(password, "where")) { MessageBox.Show("Недопустимое значение"); return; }
             if (GuardSqlInjection(login, "WHERE") || GuardSqlInjection(password, "WHERE")) { MessageBox.Show("Недопустимое значение"); return; }
             string encryptedPassword = Encrypt(password);
+            con.Open();
+            using (var transaction = con.BeginTransaction())
+            {
+                try
+                {
+                    //заполнение таблицы user
+                    using (NpgsqlCommand cmd = new NpgsqlCommand(
+                        "insert into \"user\"(id_type_user, \"login\", \"password\", \"email\", " +
+                        "date_registration, last_entry) " +
+                        "values (1,@login,@password,@email,current_date, now())", con))
+                    {
+                        cmd.Parameters.AddWithValue("@login", login);
+                        cmd.Parameters.AddWithValue("@password", encryptedPassword);
+                        cmd.Parameters.AddWithValue("@email", email);
+                        cmd.ExecuteNonQuery();
+                    }
+                    //создание роли в бд
+                    using (NpgsqlCommand cmd = new NpgsqlCommand($"CREATE USER \"{login}\" WITH PASSWORD '{encryptedPassword}'", con))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                    //выдача прав
+                    using (NpgsqlCommand cmd = new NpgsqlCommand($"grant select, update, " +
+                        $"insert on all tables in schema public to \"{login}\"",con))
+                    {
+                        cmd.ExecuteNonQuery();
+                    }
+                    transaction.Commit();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                    transaction.Rollback();
+                }
+            }
+            con.Close();
         }
         private bool SearchUser(NpgsqlConnection con, string login, string password)
         {
