@@ -44,7 +44,7 @@ namespace SUBD.kursovaya2
             string login = textBox1.Text;
             string password = textBox2.Text;
             string email = textBox3.Text;
-            if (SearchUser(con, login, password)) { MessageBox.Show("Такой пользователь уже существует"); return; }
+            if (SearchUser(con, login)) { MessageBox.Show("Такой пользователь уже существует"); return; }
             if (GuardSqlInjection(login, "where") || GuardSqlInjection(password, "where")) { MessageBox.Show("Недопустимое значение"); return; }
             if (GuardSqlInjection(login, "WHERE") || GuardSqlInjection(password, "WHERE")) { MessageBox.Show("Недопустимое значение"); return; }
             string encryptedPassword = Encrypt(password);
@@ -85,15 +85,30 @@ namespace SUBD.kursovaya2
             }
             con.Close();
         }
-        private bool SearchUser(NpgsqlConnection con, string login, string password)
+        private bool SearchUser(NpgsqlConnection con, string login)
         {
             bool found = false;
-            con.Open();
-            NpgsqlCommand cmd = new NpgsqlCommand($"select id from \"user\" where login = @login", con);
-            cmd.Parameters.AddWithValue("@login", login);
-            if (cmd.ExecuteNonQuery() > -1) //если сущ
-                found = true;
-            con.Close();
+            try
+            {
+                con.Open();
+                using (NpgsqlCommand cmd = new NpgsqlCommand("select id from \"user\"" +
+                    "where login = @login", con))
+                {
+                    cmd.Parameters.AddWithValue("@login", login);
+                    using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                    {
+                        found = reader.Read();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+
+            }
+            finally
+            {
+                con.Close();
+            }
             return found;
         }
         private bool GuardSqlInjection(string main, string subSeq)
