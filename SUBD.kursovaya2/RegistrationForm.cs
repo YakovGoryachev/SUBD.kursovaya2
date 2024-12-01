@@ -76,6 +76,7 @@ namespace SUBD.kursovaya2
                         cmd.ExecuteNonQuery();
                     }
                     transaction.Commit();
+                    MessageBox.Show("Аккаунт зарегистрирован");
                 }
                 catch (Exception ex)
                 {

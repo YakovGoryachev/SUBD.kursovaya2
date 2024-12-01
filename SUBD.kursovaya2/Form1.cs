@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,21 +20,37 @@ namespace SUBD.kursovaya2
         {
             InitializeComponent();
         }
+        bool dataExist;
         RegistrationForm RegForm;
         ApplicationForm AppForm;
+        string dataAutFilePath = "dataFilePath.txt";
 
         private void Form1_Load(object sender, EventArgs e)
         {
             MaximizeBox = false;
             FormBorderStyle = FormBorderStyle.FixedDialog;
+            LoadFromFile();
         }
-
+        private void LoadFromFile()
+        {
+            if (File.Exists(dataAutFilePath))
+            {
+                string[] data = File.ReadAllLines(dataAutFilePath);
+                if (data.Length == 2)
+                {
+                    textBox1.Text = data[0];
+                    textBox2.Text = data[1];
+                    dataExist = true;
+                }
+            }
+        }
         private void EntryBut_Click(object sender, EventArgs e)
         {
             try
             {
                 string verifLogin = "";
                 string verifPass = "";
+                int role = 1;
                 using (NpgsqlConnection con = new NpgsqlConnection(
                     "server=localhost; Port=1234; database=DataBaseGopar; userId=postgres; password=admin"))
                 {
@@ -63,32 +81,58 @@ namespace SUBD.kursovaya2
                             }
                         }
                     }
+                    using (NpgsqlCommand cmd = new NpgsqlCommand(
+                        "select id_type_user from \"user\" where login = @login",con))
+                    {
+                        cmd.Parameters.AddWithValue("login", login);
+                        using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                        {
+                            if (reader.Read())
+                            {
+                                role = Convert.ToInt32(reader.GetValue(0));
+                            }
+                            else { MessageBox.Show("Не удается получить роль"); }
+                        }
+                    }
                     con.Close();
                     if (storedPassword != encryptedPassword)
                     { MessageBox.Show("Неправильный пароль"); return; }
                     verifLogin = login;
                     verifPass = encryptedPassword;
                 }
-                Entry(verifLogin, verifPass);
+                Entry(verifLogin, verifPass, role);
+                SaveDataAut(textBox1.Text, textBox2.Text);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
         }
-
-        private void Entry(string login, string pass)
+        private void SaveDataAut(string login, string pass)
+        {
+            if (!dataExist)
+            {
+                using (StreamWriter writer = new StreamWriter(dataAutFilePath))
+                {
+                    writer.WriteLine(login);
+                    writer.WriteLine(pass);
+                }
+            }
+        }
+        private void Entry(string login, string pass, int role)
         {
             try
             {
                 AppForm = new ApplicationForm();
                 AppForm.Form1 = this;
+                AppForm.login = login;
+                AppForm.password = pass;
                 Hide();
                 AppForm.Show();
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show(ex.Message);
             }
         }
 
@@ -139,6 +183,7 @@ namespace SUBD.kursovaya2
                     RegForm = new RegistrationForm();
                     RegForm.AutForm = this;
                     RegForm.Show();
+                    Hide();
                 }
                 RegForm.Activate();
             }
