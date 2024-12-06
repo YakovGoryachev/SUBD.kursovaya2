@@ -63,10 +63,17 @@ namespace SUBD.kursovaya2
             if (countFilms > 6)
                 iindex = 6;
             else iindex = countFilms;
-            int[] masIndex = new int[countFilms];
+            int[] masIndex = new int[6];
+            List<int> mas = new List<int>();
+            for (int i = 0; i < countFilms; i++)
+            {
+                mas.Add(i);
+            }
             for (int i = 0; i < iindex; i++)
             {
-                int ind = rnd.Next(0,countFilms);
+                int indRand = rnd.Next(0,mas.Count);
+                int ind = mas[indRand];
+                mas.Remove(indRand);
                 masLabels[i].Text = ds.Tables[0].Rows[ind][0].ToString();
                 Bitmap image;
                 using (var ms = new MemoryStream((byte[])ds.Tables[0].Rows[ind][1]))
@@ -75,6 +82,7 @@ namespace SUBD.kursovaya2
                 }
                 masPict[i].Image = image;
                 masPict[i].SizeMode = PictureBoxSizeMode.StretchImage;
+                masIndex[i] = ind;
             }
         }
         private void CheckAdmin()
