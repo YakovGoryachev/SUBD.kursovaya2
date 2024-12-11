@@ -122,5 +122,10 @@ namespace SUBD.kursovaya2
                 Hide();
             }
         }
+
+        private void button1_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }
