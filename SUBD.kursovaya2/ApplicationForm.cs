@@ -19,10 +19,13 @@ namespace SUBD.kursovaya2
         {
             InitializeComponent();
         }
+        bool isDeletedPoisk;
         public string login;
         public string password;
         public Form1 Form1;
         public AdminPanel AdminPanel1;
+        public FilmPanel filmPanel;
+        public string filmName;
         NpgsqlConnection con;
 
         private void ApplicationForm_Load(object sender, EventArgs e)
@@ -33,7 +36,7 @@ namespace SUBD.kursovaya2
             con = new NpgsqlConnection(
                 $"server=localhost; Port=1234; database=DataBaseGopar; userId={login}; password={password}");
             CheckAdmin();
-            DownloadingPhotos(); //допилить
+            DownloadingPhotos();
         }
         private void DownloadingPhotos()
         {
@@ -56,6 +59,7 @@ namespace SUBD.kursovaya2
             {
                 con.Open();
                 da.Fill(ds, "dataFilm");
+                con.Close();
             }
             //label2.Text = ds.Tables[0].Rows[0][1].ToString();
             Random rnd = new Random();
@@ -106,7 +110,7 @@ namespace SUBD.kursovaya2
             }
         }
 
-        private void button2_Click(object sender, EventArgs e) //вывод админ формы
+        private void button2_Click(object sender, EventArgs e) //вы��од админ формы
         {
             if (AdminPanel1 == null)
             {
@@ -121,6 +125,58 @@ namespace SUBD.kursovaya2
                 AdminPanel1.Show();
                 Hide();
             }
+        }
+
+        private void comboBox1_MouseClick(object sender, MouseEventArgs e)
+        {
+            if (!isDeletedPoisk)
+            {
+                comboBox1.Text = "";
+                isDeletedPoisk = true;
+            }
+        }
+
+        private void comboBox1_KeyDown(object sender, KeyEventArgs e)
+        {
+            try
+            {
+                if (e.KeyCode == Keys.Enter)
+                {
+                    CheckComboboxText();
+                    
+                    // Создаем новый экземпляр формы каждый раз
+                    if (filmPanel != null)
+                    {
+                        filmPanel.Close();
+                        filmPanel = null;
+                    }
+                    
+                    filmPanel = new FilmPanel();
+                    filmPanel.appform = this;
+                    filmPanel.filmName = filmName;
+                    filmPanel.Show();
+                    Hide();
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+        private void CheckComboboxText()
+        {
+            int idFilm = 0;
+            con.Open();
+            using (var cmd = new NpgsqlCommand(
+                "select \"id\" from film where \"name\" = @name",con))
+            {
+                cmd.Parameters.AddWithValue("@name", comboBox1.Text.Trim());
+                idFilm = Convert.ToInt16(cmd.ExecuteScalar());
+            }
+            con.Close();
+            if (idFilm > 0)
+                filmName = comboBox1.Text;
+            else throw new Exception($"Такого фильма нет - {comboBox1.Text}, {idFilm}");
         }
     }
 }

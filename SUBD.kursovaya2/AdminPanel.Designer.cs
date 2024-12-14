@@ -56,6 +56,7 @@
             this.textBox8 = new System.Windows.Forms.TextBox();
             this.label11 = new System.Windows.Forms.Label();
             this.textBox9 = new System.Windows.Forms.TextBox();
+            this.DelBut = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -297,11 +298,22 @@
             this.textBox9.Size = new System.Drawing.Size(100, 20);
             this.textBox9.TabIndex = 27;
             // 
+            // DelBut
+            // 
+            this.DelBut.Location = new System.Drawing.Point(499, 399);
+            this.DelBut.Name = "DelBut";
+            this.DelBut.Size = new System.Drawing.Size(75, 38);
+            this.DelBut.TabIndex = 28;
+            this.DelBut.Text = "Удаление фильма";
+            this.DelBut.UseVisualStyleBackColor = true;
+            this.DelBut.Click += new System.EventHandler(this.DelBut_Click);
+            // 
             // AdminPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.DelBut);
             this.Controls.Add(this.textBox9);
             this.Controls.Add(this.label11);
             this.Controls.Add(this.textBox8);
@@ -369,5 +381,6 @@
         private System.Windows.Forms.TextBox textBox8;
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.TextBox textBox9;
+        private System.Windows.Forms.Button DelBut;
     }
 }

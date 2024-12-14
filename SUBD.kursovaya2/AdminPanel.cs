@@ -370,8 +370,105 @@ namespace SUBD.kursovaya2
                         if (c == ' ' || c == ',')
                             throw new Exception("В поле отчество не должно быть пробелов и запятых");
                     }
+
                 }
+            }
+        }
+
+        private void DelBut_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(textBox1.Text))
+                {
+                    MessageBox.Show("Введите название фильма для удаления");
+                    return;
+                }
+
+                var result = MessageBox.Show(
+                    $"Вы действительно хотите удалить фильм \"{textBox1.Text.Trim()}\"?",
+                    "Подтверждение удаления",
+                    MessageBoxButtons.YesNo,
+                    MessageBoxIcon.Warning
+                );
+
+                if (result == DialogResult.No)
+                    return;
+
+                con.Open();
+                using (var transaction = con.BeginTransaction())
+                {
+                    try
+                    {
+                        int filmId;
+                        // Получаем ID фильма
+                        using (var cmd = new NpgsqlCommand("SELECT id FROM film WHERE name = @name", con))
+                        {
+                            cmd.Parameters.AddWithValue("@name", textBox1.Text.Trim());
+                            var idObj = cmd.ExecuteScalar();
+                            if (idObj == null || idObj == DBNull.Value)
+                            {
+                                throw new Exception("Фильм не найден");
+                            }
+                            filmId = Convert.ToInt32(idObj);
+                        }
+
+                        // Удаляем связанные данные
+                        string[] deleteQueries = new string[]
+                        {
+                            "DELETE FROM photo WHERE id_film = @filmId",
+                            "DELETE FROM genre_in_film WHERE id_film = @filmId",
+                            "DELETE FROM participant_film WHERE id_film = @filmId",
+                            "DELETE FROM film WHERE id = @filmId"
+                        };
+
+                        foreach (string query in deleteQueries)
+                        {
+                            using (var cmd = new NpgsqlCommand(query, con))
+                            {
+                                cmd.Parameters.AddWithValue("@filmId", filmId);
+                                cmd.ExecuteNonQuery();
+                            }
+                        }
+
+                        transaction.Commit();
+                        MessageBox.Show("Фильм успешно удален");
+
+                        // Очищаем поля
+                        textBox1.Clear();
+                        textBox2.Clear();
+                        textBox3.Clear();
+                        textBox4.Clear();
+                        textBox5.Clear();
+                        textBox6.Clear();
+                        textBox7.Clear();
+                        textBox8.Clear();
+                        textBox9.Clear();
+                        richTextBox1.Clear();
+                        if (pictureBox1.Image != null)
+                        {
+                            pictureBox1.Image.Dispose();
+                            pictureBox1.Image = null;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        throw new Exception($"Ошибка при удалении фильма: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
             }
         }
     }
 }
+
+
