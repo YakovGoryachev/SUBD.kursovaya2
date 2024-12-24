@@ -35,48 +35,69 @@ namespace SUBD.kursovaya2
         }
         private void ShowFilm()
         {
-            DownLoadPhoto();
-            DownloadInformation();
+            try
+            {
+                DownLoadPhoto();
+                DownloadInformation();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                if (con != null && con.State == ConnectionState.Open)
+                    con.Close();
+            }
         }
         private void DownLoadPhoto()
         {
-            int idFilm = 0;
-            using (var cmd = new NpgsqlCommand("select \"id\" from film where \"name\" = @name",con))
+            try
             {
-                con.Open();
-                cmd.Parameters.AddWithValue("@name", filmName);
-                idFilm = Convert.ToInt32(cmd.ExecuteScalar());
-                con.Close();
-            }
-            if (idFilm == 0 || idFilm < 0) { throw new Exception("Такого фильма нет"); }
-            using (var command = new NpgsqlCommand(
-                "select photo from photo where id_film = @id_film",con))
-            {
-                con.Open();
-                command.Parameters.AddWithValue("@id_film", idFilm);
-                using (var reader = command.ExecuteReader())
+                if (con.State != ConnectionState.Open)
+                    con.Open();
+                
+                int idFilm = 0;
+                using (var cmd = new NpgsqlCommand("select \"id\" from film where \"name\" = @name",con))
                 {
-                    if (reader.Read())
+                    cmd.Parameters.AddWithValue("@name", filmName);
+                    idFilm = Convert.ToInt32(cmd.ExecuteScalar());
+                }
+                if (idFilm == 0 || idFilm < 0) { throw new Exception("Такого фильма нет"); }
+                using (var command = new NpgsqlCommand(
+                    "select photo from photo where id_film = @id_film",con))
+                {
+                    command.Parameters.AddWithValue("@id_film", idFilm);
+                    using (var reader = command.ExecuteReader())
                     {
-                        byte[] photoBytes = (byte[])reader["photo"];
-                        using (var ms = new MemoryStream(photoBytes))
+                        if (reader.Read())
                         {
-                            Image image = Image.FromStream(ms);
-                            pictureBox1.Image = image;
-                            pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+                            byte[] photoBytes = (byte[])reader["photo"];
+                            using (var ms = new MemoryStream(photoBytes))
+                            {
+                                Image image = Image.FromStream(ms);
+                                pictureBox1.Image = image;
+                                pictureBox1.SizeMode = PictureBoxSizeMode.StretchImage;
+                            }
                         }
                     }
                 }
-                con.Close();
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
             }
         }
         private void DownloadInformation()
         {
             try
             {
+                if (con.State != ConnectionState.Open)
+                    con.Open();
+                
                 label1.Text = filmName;
 
-                con.Open();
                 // Получаем основную информацию о фильме
                 using (var cmd = new NpgsqlCommand(
                     @"SELECT f.description, f.studio, f.date_release, f.source_reference,
@@ -180,10 +201,6 @@ namespace SUBD.kursovaya2
                     }
                     richTextBox3.Text = comments.ToString().TrimEnd();
                 }
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Ошибка при загрузке информации: {ex.Message}");
             }
             finally
             {
@@ -393,6 +410,136 @@ namespace SUBD.kursovaya2
                     {
                         int userId, filmId;
 
+                        
+                        using (var cmd = new NpgsqlCommand(
+                            "SELECT id FROM \"user\" WHERE login = @login", con))
+                        {
+                            cmd.Parameters.AddWithValue("@login", login);
+                            var result = cmd.ExecuteScalar();
+                            if (result == null)
+                                throw new Exception("Пользователь не найден");
+                            userId = Convert.ToInt32(result);
+                        }
+
+                        
+                        using (var cmd = new NpgsqlCommand(
+                            "SELECT id FROM film WHERE name = @name", con))
+                        {
+                            cmd.Parameters.AddWithValue("@name", filmName);
+                            var result = cmd.ExecuteScalar();
+                            if (result == null)
+                                throw new Exception("Фильм не найден");
+                            filmId = Convert.ToInt32(result);
+                        }
+
+                        
+                        using (var cmd = new NpgsqlCommand(
+                            @"INSERT INTO comment (id_user, id_film, comment, public_date) 
+                            VALUES (@userId, @filmId, @comment, CURRENT_TIMESTAMP)", con))
+                        {
+                            cmd.Parameters.AddWithValue("@userId", userId);
+                            cmd.Parameters.AddWithValue("@filmId", filmId);
+                            cmd.Parameters.AddWithValue("@comment", richTextBox4.Text.Trim());
+                            cmd.ExecuteNonQuery();
+                        }
+
+                        transaction.Commit();
+                        richTextBox4.Clear();
+                        
+                        
+                        DownloadInformation();
+                        MessageBox.Show("Комментарий успешно добавлен");
+                    }
+                    catch (Exception ex)
+                    {
+                        transaction.Rollback();
+                        throw new Exception($"Ошибка при добавлении комментария: {ex.Message}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
+        }
+
+        private void EvalBut_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                // Создаем форму для ввода оценки
+                Form inputForm = new Form()
+                {
+                    Width = 300,
+                    Height = 150,
+                    FormBorderStyle = FormBorderStyle.FixedDialog,
+                    Text = "Оценка фильма",
+                    StartPosition = FormStartPosition.CenterParent,
+                    MaximizeBox = false,
+                    MinimizeBox = false,
+                    TopMost = true,
+                    Owner = this
+                };
+
+                NumericUpDown numericUpDown = new NumericUpDown()
+                {
+                    Left = 50,
+                    Top = 20,
+                    Width = 180,
+                    Minimum = 0,
+                    Maximum = 10,
+                    DecimalPlaces = 0,
+                    Value = 5,
+                    Increment = 1
+                };
+
+                Button confirmButton = new Button()
+                {
+                    Text = "ОК",
+                    Left = 50,
+                    Width = 80,
+                    Top = 60,
+                    DialogResult = DialogResult.OK
+                };
+
+                Button cancelButton = new Button()
+                {
+                    Text = "Отмена",
+                    Left = 150,
+                    Width = 80,
+                    Top = 60,
+                    DialogResult = DialogResult.Cancel
+                };
+
+                Label label = new Label()
+                {
+                    Left = 50,
+                    Top = 5,
+                    Text = "Введите оценку от 0 до 10:",
+                    Width = 200
+                };
+
+                inputForm.Controls.AddRange(new Control[] { numericUpDown, confirmButton, cancelButton, label });
+                inputForm.AcceptButton = confirmButton;
+                inputForm.CancelButton = cancelButton;
+
+                if (inputForm.ShowDialog() != DialogResult.OK)
+                    return;
+
+                decimal rating = numericUpDown.Value;
+
+                con.Open();
+                using (var transaction = con.BeginTransaction())
+                {
+                    try
+                    {
+                        int userId, filmId;
+
                         // Получаем ID пользователя
                         using (var cmd = new NpgsqlCommand(
                             "SELECT id FROM \"user\" WHERE login = @login", con))
@@ -415,28 +562,57 @@ namespace SUBD.kursovaya2
                             filmId = Convert.ToInt32(result);
                         }
 
-                        // Добавляем комментарий
+                        // Проверяем, не оценивал ли уже пользователь этот фильм
                         using (var cmd = new NpgsqlCommand(
-                            @"INSERT INTO comment (id_user, id_film, comment, public_date) 
-                            VALUES (@userId, @filmId, @comment, CURRENT_TIMESTAMP)", con))
+                            "SELECT id FROM evaluation WHERE id_user = @userId AND id_film = @filmId", con))
                         {
                             cmd.Parameters.AddWithValue("@userId", userId);
                             cmd.Parameters.AddWithValue("@filmId", filmId);
-                            cmd.Parameters.AddWithValue("@comment", richTextBox4.Text.Trim());
-                            cmd.ExecuteNonQuery();
+                            var existingEval = cmd.ExecuteScalar();
+
+                            if (existingEval != null)
+                            {
+                                // Обновляем существующую оценку
+                                using (var updateCmd = new NpgsqlCommand(
+                                    "UPDATE evaluation SET evaluation = @rating WHERE id_user = @userId AND id_film = @filmId", con))
+                                {
+                                    updateCmd.Parameters.AddWithValue("@rating", rating);
+                                    updateCmd.Parameters.AddWithValue("@userId", userId);
+                                    updateCmd.Parameters.AddWithValue("@filmId", filmId);
+                                    updateCmd.ExecuteNonQuery();
+                                }
+                                using (var updateDate = new NpgsqlCommand(
+                                    "update evaluation set date_evaluation = current_date where id_user = @userId and id_film = @filmId",con))
+                                {
+                                    updateDate.Parameters.AddWithValue("@userId", userId);
+                                    updateDate.Parameters.AddWithValue("@filmId", filmId);
+                                    updateDate.ExecuteNonQuery();
+                                }
+                            }
+                            else
+                            {
+                                // Добавляем новую оценку
+                                using (var insertCmd = new NpgsqlCommand(
+                                    "INSERT INTO evaluation (id_user, id_film, evaluation, date_evaluation) VALUES (@userId, @filmId, @rating,current_date)", con))
+                                {
+                                    insertCmd.Parameters.AddWithValue("@userId", userId);
+                                    insertCmd.Parameters.AddWithValue("@filmId", filmId);
+                                    insertCmd.Parameters.AddWithValue("@rating", rating);
+                                    insertCmd.ExecuteNonQuery();
+                                }
+                            }
                         }
 
                         transaction.Commit();
-                        richTextBox4.Clear();
+                        MessageBox.Show("Оценка успешно сохранена");
                         
-                        // Обновляем список комментариев
+                        // Обновляем информацию на форме
                         DownloadInformation();
-                        MessageBox.Show("Комментарий успешно добавлен");
                     }
                     catch (Exception ex)
                     {
                         transaction.Rollback();
-                        throw new Exception($"Ошибка при добавлении комментария: {ex.Message}");
+                        throw new Exception($"Ошибка при сохранении оценки: {ex.Message}");
                     }
                 }
             }

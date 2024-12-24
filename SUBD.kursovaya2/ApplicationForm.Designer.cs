@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.MainBut = new System.Windows.Forms.Button();
-            this.comboBox1 = new System.Windows.Forms.ComboBox();
             this.label1 = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.label7 = new System.Windows.Forms.Label();
@@ -45,6 +44,8 @@
             this.pictureBox2 = new System.Windows.Forms.PictureBox();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
             this.button2 = new System.Windows.Forms.Button();
+            this.CatalogButton = new System.Windows.Forms.Button();
+            this.ExitBut = new System.Windows.Forms.Button();
             this.panel1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox6)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox5)).BeginInit();
@@ -64,18 +65,6 @@
             this.MainBut.Text = "Главная";
             this.MainBut.UseVisualStyleBackColor = true;
             // 
-            // comboBox1
-            // 
-            this.comboBox1.AllowDrop = true;
-            this.comboBox1.FormattingEnabled = true;
-            this.comboBox1.Location = new System.Drawing.Point(426, 13);
-            this.comboBox1.Name = "comboBox1";
-            this.comboBox1.Size = new System.Drawing.Size(860, 21);
-            this.comboBox1.TabIndex = 2;
-            this.comboBox1.Text = "Поиск";
-            this.comboBox1.KeyDown += new System.Windows.Forms.KeyEventHandler(this.comboBox1_KeyDown);
-            this.comboBox1.MouseClick += new System.Windows.Forms.MouseEventHandler(this.comboBox1_MouseClick);
-            // 
             // label1
             // 
             this.label1.AutoSize = true;
@@ -87,6 +76,7 @@
             this.label1.Size = new System.Drawing.Size(432, 31);
             this.label1.TabIndex = 3;
             this.label1.Text = "nickname";
+            this.label1.Click += new System.EventHandler(this.label1_Click);
             // 
             // panel1
             // 
@@ -221,20 +211,41 @@
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(75, 44);
             this.button2.TabIndex = 8;
-            this.button2.Text = "Админка";
+            this.button2.Text = "Админ панель";
             this.button2.UseVisualStyleBackColor = true;
             this.button2.Visible = false;
             this.button2.Click += new System.EventHandler(this.button2_Click);
+            // 
+            // CatalogButton
+            // 
+            this.CatalogButton.Location = new System.Drawing.Point(581, 13);
+            this.CatalogButton.Name = "CatalogButton";
+            this.CatalogButton.Size = new System.Drawing.Size(656, 55);
+            this.CatalogButton.TabIndex = 9;
+            this.CatalogButton.Text = "Каталог фильмов";
+            this.CatalogButton.UseVisualStyleBackColor = true;
+            this.CatalogButton.Click += new System.EventHandler(this.CatalogButton_Click);
+            // 
+            // ExitBut
+            // 
+            this.ExitBut.Location = new System.Drawing.Point(1814, 908);
+            this.ExitBut.Name = "ExitBut";
+            this.ExitBut.Size = new System.Drawing.Size(75, 44);
+            this.ExitBut.TabIndex = 10;
+            this.ExitBut.Text = "Выйти";
+            this.ExitBut.UseVisualStyleBackColor = true;
+            this.ExitBut.Click += new System.EventHandler(this.ExitBut_Click);
             // 
             // ApplicationForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1904, 1041);
+            this.Controls.Add(this.ExitBut);
+            this.Controls.Add(this.CatalogButton);
             this.Controls.Add(this.button2);
             this.Controls.Add(this.panel1);
             this.Controls.Add(this.label1);
-            this.Controls.Add(this.comboBox1);
             this.Controls.Add(this.MainBut);
             this.Name = "ApplicationForm";
             this.Text = "ApplicationForm";
@@ -255,7 +266,6 @@
 
         #endregion
         private System.Windows.Forms.Button MainBut;
-        private System.Windows.Forms.ComboBox comboBox1;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Label label7;
@@ -271,5 +281,7 @@
         private System.Windows.Forms.PictureBox pictureBox2;
         private System.Windows.Forms.PictureBox pictureBox1;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button CatalogButton;
+        private System.Windows.Forms.Button ExitBut;
     }
 }

@@ -97,80 +97,100 @@ namespace SUBD.kursovaya2
         }
         private void DownloadPhotoInBD()
         {
-            if (textBox1.Text == "") { MessageBox.Show("Выберете название фильма"); return; }
-            if (pictureBox1.Image == null) { MessageBox.Show("Выберете фото"); return; }
-            con.Open();
-            int idFilm;
-
-            using (var cmd = new NpgsqlCommand("select \"id\" from film where \"name\" = @namefilm", con))
+            try
             {
-                cmd.Parameters.AddWithValue(@"namefilm", textBox1.Text.Trim());
-                idFilm = Convert.ToInt16(cmd.ExecuteScalar());
-                //textBox1.Text = idFilm.ToString();
-            }
+                if (con.State != ConnectionState.Open)
+                    con.Open();
+                
+                if (textBox1.Text == "") { MessageBox.Show("Выберете название фильма"); return; }
+                if (pictureBox1.Image == null) { MessageBox.Show("Выберете фото"); return; }
+                int idFilm;
 
-            using (var cmd = new NpgsqlCommand("insert into photo (id_film, photo)" +
-                "values (@id_film, @photo)", con))
-            {
-                cmd.Parameters.AddWithValue("@id_film", idFilm);
-                cmd.Parameters.AddWithValue("@photo", imageBytes);
-                cmd.ExecuteNonQuery();
+                using (var cmd = new NpgsqlCommand("select \"id\" from film where \"name\" = @namefilm", con))
+                {
+                    cmd.Parameters.AddWithValue(@"namefilm", textBox1.Text.Trim());
+                    idFilm = Convert.ToInt16(cmd.ExecuteScalar());
+                    //textBox1.Text = idFilm.ToString();
+                }
+
+                using (var cmd = new NpgsqlCommand("insert into photo (id_film, photo)" +
+                    "values (@id_film, @photo)", con))
+                {
+                    cmd.Parameters.AddWithValue("@id_film", idFilm);
+                    cmd.Parameters.AddWithValue("@photo", imageBytes);
+                    cmd.ExecuteNonQuery();
+                }
             }
-            con.Close();
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
         }
 
         private void DownloadGenreInBD()
         {
-            if (textBox1.Text == "") { MessageBox.Show("Введите название фильма");return; }
-            if (textBox5.Text == "") { MessageBox.Show("Введите название жанра"); return; }
-            int idFilm = 0;
-            int idGenre = 0;
-            int idGenreInFilm = 0;
-            CheckTextbox();
-            con.Open();
-            using (var cmd = new NpgsqlCommand("select \"id\" from film where \"name\" = @name",con))
+            try
             {
-                cmd.Parameters.AddWithValue("@name", textBox1.Text.Trim());
-                idFilm = Convert.ToInt16(cmd.ExecuteScalar());
+                if (con.State != ConnectionState.Open)
+                    con.Open();
+                
+                if (textBox1.Text == "") { MessageBox.Show("Введите название фильма");return; }
+                if (textBox5.Text == "") { MessageBox.Show("Введите название жанра"); return; }
+                int idFilm = 0;
+                int idGenre = 0;
+                int idGenreInFilm = 0;
+                CheckTextbox();
+                using (var cmd = new NpgsqlCommand("select \"id\" from film where \"name\" = @name",con))
+                {
+                    cmd.Parameters.AddWithValue("@name", textBox1.Text.Trim());
+                    idFilm = Convert.ToInt16(cmd.ExecuteScalar());
+                }
+                if (idFilm == 0)
+                { con.Close(); throw new Exception("Такого фильма нет"); }
+                using (var cmd = new NpgsqlCommand("select \"id\" from genre where genre = @genre",con))
+                {
+                    cmd.Parameters.AddWithValue("@genre",textBox5.Text.Trim());
+                    idGenre = Convert.ToInt16(cmd.ExecuteScalar());
+                }
+                if (idGenre == 0)
+                { con.Close(); throw new Exception("Такого жанра нет"); }
+                using (var cmd = new NpgsqlCommand("select \"id\" from genre_in_film where id_film = @id_film " +
+                    "and id_genre = @id_genre",con))
+                {
+                    cmd.Parameters.AddWithValue("@id_film", idFilm);
+                    cmd.Parameters.AddWithValue("@id_genre", idGenre);
+                    idGenreInFilm = Convert.ToInt16(cmd.ExecuteScalar());
+                }
+                if (idGenreInFilm != 0)
+                { con.Close(); throw new Exception("Такой жанр уже установлен для этого фильма"); }
+                using (var cmd = new NpgsqlCommand("insert into genre_in_film (id_film, id_genre) " +
+                    "values (@id_film, @id_genre)", con))
+                {
+                    cmd.Parameters.AddWithValue("@id_film", idFilm);
+                    cmd.Parameters.AddWithValue("@id_genre", idGenre);
+                    cmd.ExecuteNonQuery();
+                }
             }
-            if (idFilm == 0)
-            { con.Close(); throw new Exception("Такого фильма нет"); }
-            using (var cmd = new NpgsqlCommand("select \"id\" from genre where genre = @genre",con))
+            finally
             {
-                cmd.Parameters.AddWithValue("@genre",textBox5.Text.Trim());
-                idGenre = Convert.ToInt16(cmd.ExecuteScalar());
+                if (con.State == ConnectionState.Open)
+                    con.Close();
             }
-            if (idGenre == 0)
-            { con.Close(); throw new Exception("Такого жанра нет"); }
-            using (var cmd = new NpgsqlCommand("select \"id\" from genre_in_film where id_film = @id_film " +
-                "and id_genre = @id_genre",con))
-            {
-                cmd.Parameters.AddWithValue("@id_film", idFilm);
-                cmd.Parameters.AddWithValue("@id_genre", idGenre);
-                idGenreInFilm = Convert.ToInt16(cmd.ExecuteScalar());
-            }
-            if (idGenreInFilm != 0)
-            { con.Close(); throw new Exception("Такой жанр уже установлен для этого фильма"); }
-            using (var cmd = new NpgsqlCommand("insert into genre_in_film (id_film, id_genre) " +
-                "values (@id_film, @id_genre)", con))
-            {
-                cmd.Parameters.AddWithValue("@id_film", idFilm);
-                cmd.Parameters.AddWithValue("@id_genre", idGenre);
-                cmd.ExecuteNonQuery();
-            }
-            con.Close();
         }
         private void DownloadParticipantInBD()
         {
-            if (textBox1.Text == "") { MessageBox.Show("Введите название фильма"); return; }
-            if (textBox6.Text == "") { MessageBox.Show("Введите имя участника"); return; }
-            if (textBox7.Text == "") { MessageBox.Show("Введите фамилия участника"); return; }
-            //if (textBox8.Text == "") { MessageBox.Show("Введите отчество участника"); return; }
-            if (textBox9.Text == "") { MessageBox.Show("Введите роль участника"); return; }
-            CheckTextbox();
-            con.Open();
-            using (var transaction =  con.BeginTransaction())
+            try
             {
+                if (con.State != ConnectionState.Open)
+                    con.Open();
+                
+                if (textBox1.Text == "") { MessageBox.Show("Введите название фильма"); return; }
+                if (textBox6.Text == "") { MessageBox.Show("Введите имя участника"); return; }
+                if (textBox7.Text == "") { MessageBox.Show("Введите фамилия участника"); return; }
+                //if (textBox8.Text == "") { MessageBox.Show("Введите отчество участника"); return; }
+                if (textBox9.Text == "") { MessageBox.Show("Введите роль участника"); return; }
+                CheckTextbox();
                 int idRole = 0;
                 int idFilm = 0;
                 int idParticipant = 0;
@@ -237,9 +257,12 @@ namespace SUBD.kursovaya2
                 //        cmd.ExecuteNonQuery();
                 //    }
                 //}
-                transaction.Commit();
             }
-            con.Close();
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
+            }
         }
         private void DownFilmBut_Click(object sender, EventArgs e)
         {

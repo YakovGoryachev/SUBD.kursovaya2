@@ -27,6 +27,7 @@ namespace SUBD.kursovaya2
         public FilmPanel filmPanel;
         public string filmName;
         NpgsqlConnection con;
+        public CatalogForm catalogForm;
 
         private void ApplicationForm_Load(object sender, EventArgs e)
         {
@@ -40,77 +41,93 @@ namespace SUBD.kursovaya2
         }
         private void DownloadingPhotos()
         {
-            int countFilms;
-            using (var cmd = new NpgsqlCommand("" +
-                "select count(*) from film",con))
+            try
             {
-                con.Open();
-                countFilms = Convert.ToInt16(cmd.ExecuteScalar());
-                con.Close();
-            }
-            PictureBox[] masPict = new PictureBox[] {
-                pictureBox1, pictureBox2, pictureBox3, pictureBox4, pictureBox5, pictureBox6
-            };
-            Label[] masLabels = new Label[] {label2, label3, label4, label5, label6, label7};
-            DataSet ds = new DataSet();
-            using (var da = new NpgsqlDataAdapter(
-                    "select film.name, photo.photo from film inner join photo" +
-                    " on film.id = photo.id_film", con))
-            {
-                con.Open();
-                da.Fill(ds, "dataFilm");
-                con.Close();
-            }
-            //label2.Text = ds.Tables[0].Rows[0][1].ToString();
-            Random rnd = new Random();
-            int iindex = 6;
-            if (countFilms > 6)
-                iindex = 6;
-            else iindex = countFilms;
-            List<int> mas = new List<int>();
-            for (int i = 0; i < countFilms; i++)
-            {
-                mas.Add(i);
-            }
-            for (int i = 0; i < iindex; i++)
-            {
-                int indRand = rnd.Next(0,mas.Count);
-                int ind = mas[indRand];
-                mas.RemoveAt(indRand);
-                masLabels[i].Text = ds.Tables[0].Rows[ind][0].ToString();
-                Bitmap image;
-                using (var ms = new MemoryStream((byte[])ds.Tables[0].Rows[ind][1]))
+                if (con.State != ConnectionState.Open)
+                    con.Open();
+                
+                int countFilms;
+                using (var cmd = new NpgsqlCommand("" +
+                    "select count(*) from film",con))
                 {
-                    image = new Bitmap(ms);
+                    countFilms = Convert.ToInt16(cmd.ExecuteScalar());
                 }
-                masPict[i].Image = image;
-                masPict[i].SizeMode = PictureBoxSizeMode.StretchImage;
+                PictureBox[] masPict = new PictureBox[] {
+                    pictureBox1, pictureBox2, pictureBox3, pictureBox4, pictureBox5, pictureBox6
+                };
+                Label[] masLabels = new Label[] {label2, label3, label4, label5, label6, label7};
+                DataSet ds = new DataSet();
+                using (var da = new NpgsqlDataAdapter(
+                        "select film.name, photo.photo from film inner join photo" +
+                        " on film.id = photo.id_film", con))
+                {
+                    da.Fill(ds, "dataFilm");
+                }
+                //label2.Text = ds.Tables[0].Rows[0][1].ToString();
+                Random rnd = new Random();
+                int iindex = 6;
+                if (countFilms > 6)
+                    iindex = 6;
+                else iindex = countFilms;
+                List<int> mas = new List<int>();
+                for (int i = 0; i < countFilms; i++)
+                {
+                    mas.Add(i);
+                }
+                for (int i = 0; i < iindex; i++)
+                {
+                    int indRand = rnd.Next(0,mas.Count);
+                    int ind = mas[indRand];
+                    mas.RemoveAt(indRand);
+                    masLabels[i].Text = ds.Tables[0].Rows[ind][0].ToString();
+                    Bitmap image;
+                    using (var ms = new MemoryStream((byte[])ds.Tables[0].Rows[ind][1]))
+                    {
+                        image = new Bitmap(ms);
+                    }
+                    masPict[i].Image = image;
+                    masPict[i].SizeMode = PictureBoxSizeMode.StretchImage;
+                }
+            }
+            finally
+            {
+                if (con.State == ConnectionState.Open)
+                    con.Close();
             }
         }
         private void CheckAdmin()
         {
-            con.Open();
-            int type = 0;
-            using (var cmd = con.CreateCommand())
+            try
             {
-                cmd.CommandText = "select id_type_user from \"user\" where login = @login";
-                cmd.Parameters.AddWithValue("@login",login);
-                using (NpgsqlDataReader reader = cmd.ExecuteReader())
+                if (con.State != ConnectionState.Open)
+                    con.Open();
+                
+                int type = 0;
+                using (var cmd = con.CreateCommand())
                 {
-                    while (reader.Read())
+                    cmd.CommandText = "select id_type_user from \"user\" where login = @login";
+                    cmd.Parameters.AddWithValue("@login",login);
+                    using (NpgsqlDataReader reader = cmd.ExecuteReader())
                     {
-                        type = reader.GetInt16(0);
+                        while (reader.Read())
+                        {
+                            type = reader.GetInt16(0);
+                        }
                     }
                 }
+                if (type == 2)
+                {
+                    button2.Visible = true;
+                }
             }
-            con.Close();
-            if (type == 2)
+            finally
             {
-                button2.Visible = true;
+                if (con.State == ConnectionState.Open)
+                    con.Close();
             }
         }
 
-        private void button2_Click(object sender, EventArgs e) //вы��од админ формы
+        private void button2_Click(object sender, EventArgs e) //выод админ формы
         {
             if (AdminPanel1 == null)
             {
@@ -127,56 +144,91 @@ namespace SUBD.kursovaya2
             }
         }
 
-        private void comboBox1_MouseClick(object sender, MouseEventArgs e)
-        {
-            if (!isDeletedPoisk)
-            {
-                comboBox1.Text = "";
-                isDeletedPoisk = true;
-            }
-        }
+        //private void comboBox1_MouseClick(object sender, MouseEventArgs e)
+        //{
+        //    if (!isDeletedPoisk)
+        //    {
+        //        comboBox1.Text = "";
+        //        isDeletedPoisk = true;
+        //    }
+        //}
 
-        private void comboBox1_KeyDown(object sender, KeyEventArgs e)
+        //private void comboBox1_KeyDown(object sender, KeyEventArgs e)
+        //{
+        //    try
+        //    {
+        //        if (e.KeyCode == Keys.Enter)
+        //        {
+        //            CheckComboboxText();
+                    
+        //            // Создаем новый экземпляр формы каждый раз
+        //            if (filmPanel != null)
+        //            {
+        //                filmPanel.Close();
+        //                filmPanel = null;
+        //            }
+                    
+        //            filmPanel = new FilmPanel();
+        //            filmPanel.appform = this;
+        //            filmPanel.filmName = filmName;
+        //            filmPanel.Show();
+        //            Hide();
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        MessageBox.Show(ex.Message);
+        //    }
+        //}
+        //private void CheckComboboxText()
+        //{
+        //    int idFilm = 0;
+        //    con.Open();
+        //    using (var cmd = new NpgsqlCommand(
+        //        "select \"id\" from film where \"name\" = @name",con))
+        //    {
+        //        cmd.Parameters.AddWithValue("@name", comboBox1.Text.Trim());
+        //        idFilm = Convert.ToInt16(cmd.ExecuteScalar());
+        //    }
+        //    con.Close();
+        //    if (idFilm > 0)
+        //        filmName = comboBox1.Text;
+        //    else throw new Exception($"Такого фильма нет - {comboBox1.Text}, {idFilm}");
+        //}
+
+        private void CatalogButton_Click(object sender, EventArgs e)
         {
             try
             {
-                if (e.KeyCode == Keys.Enter)
-                {
-                    CheckComboboxText();
-                    
-                    // Создаем новый экземпляр формы каждый раз
-                    if (filmPanel != null)
-                    {
-                        filmPanel.Close();
-                        filmPanel = null;
-                    }
-                    
-                    filmPanel = new FilmPanel();
-                    filmPanel.appform = this;
-                    filmPanel.filmName = filmName;
-                    filmPanel.Show();
-                    Hide();
-                }
+                catalogForm = new CatalogForm();
+                catalogForm.appform = this;
+                catalogForm.Show();
+                this.Hide();
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
         }
-        private void CheckComboboxText()
+
+        private void label1_Click(object sender, EventArgs e)
         {
-            int idFilm = 0;
-            con.Open();
-            using (var cmd = new NpgsqlCommand(
-                "select \"id\" from film where \"name\" = @name",con))
+            try
             {
-                cmd.Parameters.AddWithValue("@name", comboBox1.Text.Trim());
-                idFilm = Convert.ToInt16(cmd.ExecuteScalar());
+                var playlistsForm = new PlaylistsForm();
+                playlistsForm.appform = this;
+                playlistsForm.Show();
+                this.Hide();
             }
-            con.Close();
-            if (idFilm > 0)
-                filmName = comboBox1.Text;
-            else throw new Exception($"Такого фильма нет - {comboBox1.Text}, {idFilm}");
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void ExitBut_Click(object sender, EventArgs e)
+        {
+            Application.Exit();
         }
     }
 }

@@ -47,6 +47,7 @@
             this.label11 = new System.Windows.Forms.Label();
             this.richTextBox4 = new System.Windows.Forms.RichTextBox();
             this.AddCommentBut = new System.Windows.Forms.Button();
+            this.EvalBut = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
             // 
@@ -103,7 +104,7 @@
             this.AddPlaylistBut.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.AddPlaylistBut.Location = new System.Drawing.Point(18, 741);
             this.AddPlaylistBut.Name = "AddPlaylistBut";
-            this.AddPlaylistBut.Size = new System.Drawing.Size(362, 38);
+            this.AddPlaylistBut.Size = new System.Drawing.Size(309, 38);
             this.AddPlaylistBut.TabIndex = 5;
             this.AddPlaylistBut.Text = "Добавить в список";
             this.AddPlaylistBut.UseVisualStyleBackColor = true;
@@ -232,11 +233,23 @@
             this.AddCommentBut.UseVisualStyleBackColor = true;
             this.AddCommentBut.Click += new System.EventHandler(this.AddCommentBut_Click);
             // 
+            // EvalBut
+            // 
+            this.EvalBut.Font = new System.Drawing.Font("Microsoft Sans Serif", 15.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
+            this.EvalBut.Location = new System.Drawing.Point(346, 741);
+            this.EvalBut.Name = "EvalBut";
+            this.EvalBut.Size = new System.Drawing.Size(309, 38);
+            this.EvalBut.TabIndex = 19;
+            this.EvalBut.Text = "Оценить";
+            this.EvalBut.UseVisualStyleBackColor = true;
+            this.EvalBut.Click += new System.EventHandler(this.EvalBut_Click);
+            // 
             // FilmPanel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(1904, 1041);
+            this.Controls.Add(this.EvalBut);
             this.Controls.Add(this.AddCommentBut);
             this.Controls.Add(this.richTextBox4);
             this.Controls.Add(this.label11);
@@ -286,5 +299,6 @@
         private System.Windows.Forms.Label label11;
         private System.Windows.Forms.RichTextBox richTextBox4;
         private System.Windows.Forms.Button AddCommentBut;
+        private System.Windows.Forms.Button EvalBut;
     }
 }

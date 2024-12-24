@@ -35,7 +35,7 @@ namespace SUBD.kursovaya2
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show(ex.Message);
             }
         }
         private void RegistrationInDatabase(NpgsqlConnection con)
@@ -48,43 +48,52 @@ namespace SUBD.kursovaya2
             if (GuardSqlInjection(login, "where") || GuardSqlInjection(password, "where")) { MessageBox.Show("Недопустимое значение"); return; }
             if (GuardSqlInjection(login, "WHERE") || GuardSqlInjection(password, "WHERE")) { MessageBox.Show("Недопустимое значение"); return; }
             string encryptedPassword = Encrypt(password);
-            con.Open();
-            using (var transaction = con.BeginTransaction())
+            try
             {
-                try
+                con.Open();
+                using (var transaction = con.BeginTransaction())
                 {
-                    //заполнение таблицы user
-                    using (NpgsqlCommand cmd = new NpgsqlCommand(
-                        "insert into \"user\"(id_type_user, \"login\", \"password\", \"email\", " +
-                        "date_registration, last_entry) " +
-                        "values (1,@login,@password,@email,current_date, now())", con))
+                    try
                     {
-                        cmd.Parameters.AddWithValue("@login", login);
-                        cmd.Parameters.AddWithValue("@password", encryptedPassword);
-                        cmd.Parameters.AddWithValue("@email", email);
-                        cmd.ExecuteNonQuery();
+                        //заполнение таблицы user
+                        using (NpgsqlCommand cmd = new NpgsqlCommand(
+                            "insert into \"user\"(id_type_user, \"login\", \"password\", \"email\", " +
+                            "date_registration, last_entry) " +
+                            "values (1,@login,@password,@email,current_date, now())", con))
+                        {
+                            cmd.Parameters.AddWithValue("@login", login);
+                            cmd.Parameters.AddWithValue("@password", encryptedPassword);
+                            cmd.Parameters.AddWithValue("@email", email);
+                            cmd.ExecuteNonQuery();
+                        }
+                        //создание роли в бд
+                        using (NpgsqlCommand cmd = new NpgsqlCommand($"CREATE USER \"{login}\" WITH PASSWORD '{encryptedPassword}'", con))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        //выдача прав
+                        using (NpgsqlCommand cmd = new NpgsqlCommand($"grant select, update, " +
+                            $"insert, delete on all tables in schema public to \"{login}\"", con))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        using (NpgsqlCommand cmd = new NpgsqlCommand($"grant all on all" +
+                            $" sequences in schema public to \"{login}\"", con))
+                        {
+                            cmd.ExecuteNonQuery();
+                        }
+                        transaction.Commit();
+                        MessageBox.Show("Аккаунт зарегистрирован");
                     }
-                    //создание роли в бд
-                    using (NpgsqlCommand cmd = new NpgsqlCommand($"CREATE USER \"{login}\" WITH PASSWORD '{encryptedPassword}'", con))
+                    catch (Exception ex)
                     {
-                        cmd.ExecuteNonQuery();
+                        MessageBox.Show(ex.Message);
+                        transaction.Rollback();
                     }
-                    //выдача прав
-                    using (NpgsqlCommand cmd = new NpgsqlCommand($"grant select, update, " +
-                        $"insert on all tables in schema public to \"{login}\"",con))
-                    {
-                        cmd.ExecuteNonQuery();
-                    }
-                    transaction.Commit();
-                    MessageBox.Show("Аккаунт зарегистрирован");
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(ex.Message);
-                    transaction.Rollback();
                 }
             }
-            con.Close();
+            catch (Exception ex) {  MessageBox.Show(ex.Message); }
+            finally { con.Close(); }
         }
         private bool SearchUser(NpgsqlConnection con, string login)
         {
@@ -104,7 +113,7 @@ namespace SUBD.kursovaya2
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show(ex.Message);
             }
             finally
             {
@@ -152,7 +161,7 @@ namespace SUBD.kursovaya2
             }
             catch (Exception ex)
             {
-
+                MessageBox.Show(ex.Message);
             }
         }
 
